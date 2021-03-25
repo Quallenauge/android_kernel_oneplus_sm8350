@@ -3093,7 +3093,11 @@ static inline int seal_check_write(int seals, struct vm_area_struct *vma)
 	return 0;
 }
 
+#ifdef CONFIG_PRINTK
 void mem_dump_obj(void *object);
+#else
+static inline void mem_dump_obj(void *object) {}
+#endif
 
 #endif /* __KERNEL__ */
 #endif /* _LINUX_MM_H */
