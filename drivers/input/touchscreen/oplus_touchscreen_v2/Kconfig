@@ -106,7 +106,7 @@ if TOUCHPANEL_GOODIX
 endif
 
 if TOUCHPANEL_FOCAL
-#source "drivers/input/touchscreen/oplus_touchscreen_v2/Focal/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen_v2/Focal/Kconfig"
 endif
 
 if TOUCHPANEL_NOVA
@@ -121,7 +121,7 @@ source "drivers/input/touchscreen/oplus_touchscreen_v2/Samsung/Kconfig"
 endif
 
 if TOUCHPANEL_ILITEK
-#source "drivers/input/touchscreen/oplus_touchscreen_v2/ilitek/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen_v2/ilitek/Kconfig"
 endif
 if TOUCHPANEL_ST
 source "drivers/input/touchscreen/oplus_touchscreen_v2/St/Kconfig"
