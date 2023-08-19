@@ -1178,11 +1178,7 @@ int oplus_display_panel_set_dimlayer_enable(void *data)
 		return -EINVAL;
 	}
 
-	if (!strcmp(display->panel->oplus_priv.vendor_name, "AMS662ZS01")) {
-		dc_apollo_enable = *dimlayer_enable;
-		pr_info("DC BKL %s\n", *dimlayer_enable?"ON":"OFF");
-		return 0;
-	}
+	dc_apollo_enable = *dimlayer_enable;
 
 	dsi_connector = display->drm_conn;
 	if (display && display->name) {
