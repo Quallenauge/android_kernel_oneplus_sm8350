@@ -40,6 +40,8 @@ obj-y						+= oplus/sensor/
 obj-$(CONFIG_OPLUS_SENSOR_CONSUMER_IR_CORE) += oplus/oplus_consumer_ir/
 #endif /* CONFIG_OPLUS_SENSOR_CONSUMER_IR */
 
+obj-$(CONFIG_OPLUS_WAKELOCK_PROFILER) += oplus/wakelock_profiler/
+
 #ifdef OPLUS_FEATURE_TP_BASIC
 obj-$(CONFIG_OPLUS_DEVICE_IFNO)  +=  oplus/device_info/
 #endif /* OPLUS_FEATURE_TP_BASIC */

@@ -1,0 +1,4 @@
+config OPLUS_WAKELOCK_PROFILER
+bool "config oplus wakelock profiler"
+help
+    Select this config to enable oplus wakelock profiler
