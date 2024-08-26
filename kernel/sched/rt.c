@@ -1666,7 +1666,11 @@ static void check_preempt_equal_prio(struct rq *rq, struct task_struct *p)
 
 #ifdef CONFIG_SCHED_WALT
 #define WALT_RT_PULL_THRESHOLD_NS	250000
+#ifdef CONFIG_OPLUS_FEATURE_SCHED_ASSIST
+struct task_struct *pick_highest_pushable_task(struct rq *rq, int cpu);
+#else
 static struct task_struct *pick_highest_pushable_task(struct rq *rq, int cpu);
+#endif
 static void try_pull_rt_task(struct rq *this_rq)
 {
 	int i, this_cpu = this_rq->cpu, src_cpu = this_cpu;
@@ -1867,7 +1871,11 @@ static int pick_rt_task(struct rq *rq, struct task_struct *p, int cpu)
  * Return the highest pushable rq's task, which is suitable to be executed
  * on the CPU, NULL otherwise
  */
+#ifdef CONFIG_OPLUS_FEATURE_SCHED_ASSIST
+struct task_struct *pick_highest_pushable_task(struct rq *rq, int cpu)
+#else
 static struct task_struct *pick_highest_pushable_task(struct rq *rq, int cpu)
+#endif
 {
 	struct plist_head *head = &rq->rt.pushable_tasks;
 	struct task_struct *p;
@@ -1882,6 +1890,9 @@ static struct task_struct *pick_highest_pushable_task(struct rq *rq, int cpu)
 
 	return NULL;
 }
+#ifdef CONFIG_OPLUS_FEATURE_SCHED_ASSIST
+EXPORT_SYMBOL_GPL(pick_highest_pushable_task);
+#endif
 
 static DEFINE_PER_CPU(cpumask_var_t, local_cpu_mask);
 

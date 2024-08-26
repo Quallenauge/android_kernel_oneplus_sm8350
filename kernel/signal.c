@@ -57,6 +57,14 @@
 #include <asm/siginfo.h>
 #include <asm/cacheflush.h>
 
+#ifdef CONFIG_QGKI
+#include <soc/oplus/system/oplus_process.h>
+#endif
+
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+#include <linux/sched_assist/sched_assist_common.h>
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
 /*
  * SLAB caches for signal bits.
  */
@@ -1287,7 +1295,9 @@ int do_send_sig_info(int sig, struct kernel_siginfo *info, struct task_struct *p
 {
 	unsigned long flags;
 	int ret = -ESRCH;
-
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+	oplus_boost_kill_signal(sig, current, p);
+#endif
 	if (lock_task_sighand(p, &flags)) {
 		ret = send_signal(sig, info, p, type);
 		unlock_task_sighand(p, &flags);

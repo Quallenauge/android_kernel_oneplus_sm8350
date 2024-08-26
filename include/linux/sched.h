@@ -219,6 +219,16 @@ enum task_boost_type {
 
 #endif
 
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+extern int sysctl_sched_assist_enabled;
+extern int sysctl_sched_assist_scene;
+
+extern int sysctl_slide_boost_enabled;
+extern int sysctl_boost_task_threshold;
+extern int sysctl_input_boost_enabled;
+extern u64 sched_assist_input_boost_duration;
+#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
+
 /* Task command name length: */
 #define TASK_COMM_LEN			16
 
@@ -1455,7 +1465,16 @@ struct task_struct {
 	/* Used by LSM modules for access restriction: */
 	void				*security;
 #endif
-
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+	int ux_state;
+	atomic64_t inherit_ux;
+	struct list_head ux_entry;
+	int ux_depth;
+	u64 enqueue_time;
+	u64 inherit_ux_start;
+	u64 sum_exec_baseline;
+	u64 total_exec;
+#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
 #ifdef CONFIG_GCC_PLUGIN_STACKLEAK
 	unsigned long			lowest_stack;
 	unsigned long			prev_lowest_stack;

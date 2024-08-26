@@ -27,6 +27,18 @@
 
 #include "walt/walt.h"
 
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+#include <linux/sched_assist/sched_assist_common.h>
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+#include <linux/sched_assist/sched_assist_slide.h>
+#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
+
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+#include <../special_opt/special_opt.h>
+#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
+
 #ifdef CONFIG_SMP
 static inline bool task_fits_max(struct task_struct *p, int cpu);
 #endif /* CONFIG_SMP */
@@ -3900,6 +3912,11 @@ static inline bool task_fits_max(struct task_struct *p, int cpu)
 			return false;
 	}
 
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+	if (sched_assist_task_misfit(p, cpu, 0))
+		return false;
+#endif
+
 	return task_fits_capacity(p, capacity, cpu);
 }
 
@@ -6735,6 +6752,11 @@ static void walt_find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 			if (!cpu_active(i) || cpu_isolated(i))
 				continue;
 
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+			if (should_ux_task_skip_cpu(p, i))
+				continue;
+#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
+
 			if (unisolated_candidate == -1)
 				unisolated_candidate = i;
 
@@ -7206,6 +7228,10 @@ int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu,
 
 	/* Bail out if no candidate was found. */
 	weight = cpumask_weight(candidates);
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+	if (!weight)
+		set_ux_task_cpu_common_by_prio(p, &best_energy_cpu, true, false, 0);
+#endif
 	if (!weight)
 		goto unlock;
 
@@ -7268,6 +7294,10 @@ unlock:
 		best_energy_cpu = prev_cpu;
 
 done:
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+	if (!fbt_env.fastpath)
+		set_ux_task_to_prefer_cpu(p, &best_energy_cpu);
+#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
 	trace_sched_task_util(p, cpumask_bits(candidates)[0], best_energy_cpu,
 			sync, fbt_env.need_idle, fbt_env.fastpath,
 			task_boost_policy(p), start_t, boosted, is_rtg,
@@ -8503,7 +8533,10 @@ redo:
 
 		if (!can_migrate_task(p, env))
 			goto next;
-
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+		if (should_ux_task_skip_cpu(p, env->dst_cpu))
+			goto next;
+#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
 		/*
 		 * Depending of the number of CPUs and tasks and the
 		 * cgroup hierarchy, task_h_load() can return a null

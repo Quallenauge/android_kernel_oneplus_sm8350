@@ -1152,6 +1152,10 @@ struct rq {
 #ifdef CONFIG_SCHED_WALT
 	int			idle_state_idx;
 #endif
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+	struct list_head ux_thread_list;
+	raw_spinlock_t ux_list_lock;
+#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
 #endif
 };
 
@@ -2234,10 +2238,15 @@ static inline unsigned long capacity_orig_of(int cpu)
 {
 	return cpu_rq(cpu)->cpu_capacity_orig;
 }
-
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+extern void sf_task_util_record(struct task_struct *p);
+#endif
 static inline unsigned long task_util(struct task_struct *p)
 {
 #ifdef CONFIG_SCHED_WALT
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
+	sf_task_util_record(p);
+#endif
 	return p->wts.demand_scaled;
 #endif
 	return READ_ONCE(p->se.avg.util_avg);
@@ -3441,4 +3450,7 @@ static inline void walt_irq_work_queue(struct irq_work *work)
 {
 	irq_work_queue(work);
 }
+#endif
+#ifdef CONFIG_OPLUS_FEATURE_SCHED_ASSIST
+extern struct task_struct *pick_highest_pushable_task(struct rq *rq, int cpu);
 #endif
