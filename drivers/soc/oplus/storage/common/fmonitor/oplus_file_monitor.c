@@ -19,9 +19,6 @@
 #include <linux/seq_file.h>
 #include <linux/compiler.h>
 #include "fs/f2fs/f2fs.h"
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 1, 0)
-#include "trace/events/android_fs.h"
-#else
 #include <linux/fs.h>
 #define MAX_TRACE_PATHBUF_LEN	256
 static inline char *
@@ -49,7 +46,6 @@ android_fstrace_get_pathname(char *buf, int buflen, struct inode *inode)
 	}
 	return path;
 }
-#endif
 #include <trace/events/f2fs.h>
 static struct proc_dir_entry *file_monitor_procfs = NULL;
 static struct proc_dir_entry *path_filter_file = NULL;
