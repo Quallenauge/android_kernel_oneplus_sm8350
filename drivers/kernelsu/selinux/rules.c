@@ -241,6 +241,62 @@ static int apply_kernelsu_rules_fn(void *ptr)
     ksu_allow(db, "shell", "xposed_data", "dir", ALL);
     ksu_allow(db, KERNEL_SU_DOMAIN, "xposed_data", ALL, ALL);
 
+    // =========================================================
+    // custom types
+    // =========================================================
+    ksu_type(db, "zygisk_file", "file_type");
+    ksu_typeattribute(db, "zygisk_file", "mlstrustedobject");
+
+    // =========================================================
+    // crash_dump
+    // =========================================================
+    ksu_allow(db, "crash_dump", "keystore", "process", ALL);
+
+    // =========================================================
+    // keystore
+    // =========================================================
+    ksu_allow(db, "keystore", "adb_data_file", "file", ALL);
+    ksu_allow(db, "keystore", "shell_data_file", "file", ALL);
+
+    // =========================================================
+    // system_server
+    // =========================================================
+    ksu_allow(db, "system_server", "system_server", "process", "execmem");
+
+    // =========================================================
+    // zygote
+    // =========================================================
+    ksu_allow(db, "zygote", "zygote", "capability", "sys_chroot");
+    ksu_allow(db, "zygote", "zygote", "process", "execmem");
+
+    ksu_allow(db, "zygote", "adb_data_file", "dir", "search");
+    ksu_allow(db, "zygote", "adb_data_file", "file", ALL);
+
+    ksu_allow(db, "zygote", "appdomain_tmpfs", "file", ALL);
+    ksu_allow(db, "zygote", "tmpfs", "file", ALL);
+
+    ksu_allow(db, "zygote", "ksu", "dir", "search");
+    ksu_allow(db, "zygote", "ksu", "file", "read");
+    ksu_allow(db, "zygote", "ksu", "lnk_file", "read");
+
+    ksu_allow(db, "zygote", "magisk", "lnk_file", "read");
+
+    ksu_allow(db, "zygote", "nsfs", "file", "read");
+    ksu_allow(db, "zygote", "nsfs", "file", "open");
+    ksu_allow(db, "zygote", "proc", "file", "read");
+    ksu_allow(db, "zygote", "proc", "file", "open");
+
+    ksu_allow(db, "zygote", "su", "dir", "search");
+    ksu_allow(db, "zygote", "su", "file", "read");
+    ksu_allow(db, "zygote", "su", "lnk_file", "read");
+
+    ksu_allow(db, "zygote", "system_lib_file", "file", "execmod");
+    ksu_allow(db, "zygote", "unlabeled", "file", "open");
+    ksu_allow(db, "zygote", "unlabeled", "file", "read");
+    ksu_allow(db, "zygote", "unlabeled", "file", "getattr");
+    ksu_allow(db, "zygote", "zygisk_file", "sock_file", "read");
+    ksu_allow(db, "zygote", "zygisk_file", "sock_file", "write");
+
     return 0;
 }
 
