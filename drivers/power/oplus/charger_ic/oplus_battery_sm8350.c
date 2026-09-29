@@ -500,8 +500,6 @@ static int oplus_get_bcc_parameters_from_adsp(char *buf)
 	int ret = 0;
 	struct oplus_chg_chip *chip = g_oplus_chip;
 	struct battery_chg_dev *bcdev = NULL;
-	u8 tmpbuf[PAGE_SIZE] = {0};
-	int len = 0;
 	int i = 0;
 	int idx = 0;
 
@@ -513,18 +511,15 @@ static int oplus_get_bcc_parameters_from_adsp(char *buf)
 	bcdev = chip->pmic_spmi.bcdev_chip;
 	ret = bcc_read_buffer(bcdev);
 
-	for (i = 0; i < BCC_PARMS_COUNT - 1; i++) {
-		len = snprintf(tmpbuf, BCC_PAGE_SIZE - idx,
-						"%d,", bcdev->bcc_read_buffer_dump.data_buffer[i]);
-		memcpy(&buf[idx], tmpbuf, len);
-		idx += len;
+	for (i = 0; i < BCC_PARMS_COUNT && idx < BCC_PAGE_SIZE - 1; i++) {
+		idx += scnprintf(buf + idx, BCC_PAGE_SIZE - idx, "%d%s",
+			bcdev->bcc_read_buffer_dump.data_buffer[i],
+			i == BCC_PARMS_COUNT - 1 ? "" : ",");
 	}
-	len = snprintf(tmpbuf, BCC_PAGE_SIZE - idx,
-						"%d", bcdev->bcc_read_buffer_dump.data_buffer[i]);
-	memcpy(&buf[idx], tmpbuf, len);
 #ifdef BCC_SET_DEBUG_PARMS
 	if (bcc_debug_mode & BCC_Y_DEBUG) {
 		memcpy(&buf[0], bcc_debug_buf, BCC_PAGE_SIZE);
+		buf[BCC_PAGE_SIZE - 1] = '\0';
 		printk(KERN_ERR "%s bcc_debug_buf:%s\n", __func__, bcc_debug_buf);
 		return ret;
 	}
