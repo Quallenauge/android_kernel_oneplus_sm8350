@@ -286,7 +286,7 @@ static ssize_t shutdown_recorder_show(struct file *file, char __user *buf,
      };
 #endif
 
-int __init init_last_boot_reason(void)
+static int __init init_last_boot_reason(void)
 {
     struct proc_dir_entry *pe;
 
