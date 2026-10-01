@@ -231,6 +231,11 @@ struct uffdio_copy {
 	 * range according to the uffdio_register.ioctls.
 	 */
 #define UFFDIO_COPY_MODE_DONTWAKE		((__u64)1<<0)
+/*
+ * UFFDIO_COPY_MODE_MMAP_TRYLOCK will use mmap_read_trylock() in place of
+ * mmap_read_lock() and return -EAGAIN if mmap_lock is contended.
+ */
+#define UFFDIO_COPY_MODE_MMAP_TRYLOCK		((__u64)1<<63)
 	__u64 mode;
 
 	/*
@@ -243,6 +248,7 @@ struct uffdio_copy {
 struct uffdio_zeropage {
 	struct uffdio_range range;
 #define UFFDIO_ZEROPAGE_MODE_DONTWAKE		((__u64)1<<0)
+#define UFFDIO_ZEROPAGE_MODE_MMAP_TRYLOCK	((__u64)1<<63)
 	__u64 mode;
 
 	/*
