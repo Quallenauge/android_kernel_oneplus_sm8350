@@ -46,6 +46,8 @@
 #include <linux/memory_hotplug.h>
 #include <linux/cred.h>
 #include <linux/nmi.h>
+#include <linux/pid.h>
+#include <linux/syscalls.h>
 
 #include <asm/tlb.h>
 #include "internal.h"
@@ -1292,4 +1294,84 @@ void check_panic_on_foreground_kill(struct task_struct *p)
 		show_mem_call_notifiers();
 		panic("Attempt to kill foreground task: %s", p->comm);
 	}
+}
+
+SYSCALL_DEFINE2(process_mrelease, int, pidfd, unsigned int, flags)
+{
+#ifdef CONFIG_MMU
+	struct mm_struct *mm = NULL;
+	struct task_struct *task;
+	struct task_struct *p;
+	struct pid *pid;
+	bool reap = false;
+	long ret = 0;
+
+	if (flags)
+		return -EINVAL;
+
+	pid = pidfd_get_pid(pidfd);
+	if (IS_ERR(pid))
+		return PTR_ERR(pid);
+
+	task = get_pid_task(pid, PIDTYPE_TGID);
+	if (!task) {
+		ret = -ESRCH;
+		goto put_pid;
+	}
+
+	/*
+	 * Make sure to choose a thread which still has a reference to mm
+	 * during the group exit
+	 */
+	p = find_lock_task_mm(task);
+	if (!p) {
+		ret = -ESRCH;
+		goto put_task;
+	}
+
+	mm = p->mm;
+	mmgrab(mm);
+
+	if (task_will_free_mem(p)) {
+		reap = true;
+		/*
+		 * exit_mmap() only serializes against a concurrent reaper
+		 * (MMF_OOM_SKIP + mmap_sem write cycle) for OOM victims. Mark
+		 * the mm while task_lock still pins p->mm, so exit_mmap()
+		 * cannot have checked mm_is_oom_victim() yet. This matches
+		 * what add_to_oom_reaper() does for SIGKILLs sent by lmkd.
+		 */
+		__mark_oom_victim(p);
+	} else {
+		/* Error only if the work has not been done already */
+		if (!test_bit(MMF_OOM_SKIP, &mm->flags))
+			ret = -EINVAL;
+	}
+	task_unlock(p);
+
+	if (!reap)
+		goto drop_mm;
+
+	if (down_read_killable(&mm->mmap_sem)) {
+		ret = -EINTR;
+		goto drop_mm;
+	}
+	/*
+	 * Check MMF_OOM_SKIP again under mmap_sem protection to ensure
+	 * possible change in exit_mmap is seen
+	 */
+	if (!test_bit(MMF_OOM_SKIP, &mm->flags) && !__oom_reap_task_mm(mm))
+		ret = -EAGAIN;
+	up_read(&mm->mmap_sem);
+
+drop_mm:
+	mmdrop(mm);
+put_task:
+	put_task_struct(task);
+put_pid:
+	put_pid(pid);
+	return ret;
+#else
+	return -ENOSYS;
+#endif /* CONFIG_MMU */
 }

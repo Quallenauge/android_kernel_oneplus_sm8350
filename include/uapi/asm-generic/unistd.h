@@ -856,9 +856,17 @@ __SYSCALL(__NR_close_range, sys_close_range)
 __SYSCALL(__NR_process_madvise, sys_process_madvise)
 #define __NR_epoll_pwait2 441
 __SC_COMP(__NR_epoll_pwait2, sys_epoll_pwait2, compat_sys_epoll_pwait2)
+/* 442 reserved for mount_setattr */
+/* 443 reserved for quotactl_fd */
+/* 444 reserved for landlock_create_ruleset */
+/* 445 reserved for landlock_add_rule */
+/* 446 reserved for landlock_restrict_self */
+/* 447 reserved for memfd_secret */
+#define __NR_process_mrelease 448
+__SYSCALL(__NR_process_mrelease, sys_process_mrelease)
 
 #undef __NR_syscalls
-#define __NR_syscalls 442
+#define __NR_syscalls 449
 
 /*
  * 32 bit systems traditionally used different
