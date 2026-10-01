@@ -1504,7 +1504,11 @@ exit:
 		biastimer_cancel();
 		cpu->bias = 0;
 	}
-	local_irq_enable();
+	/*
+	 * Return with IRQs disabled: for CPUIDLE_FLAG_TIMER_STOP states the
+	 * cpuidle core must call tick_broadcast_exit() before IRQs are
+	 * re-enabled, and it enables them itself afterwards.
+	 */
 	return idx;
 }
 
