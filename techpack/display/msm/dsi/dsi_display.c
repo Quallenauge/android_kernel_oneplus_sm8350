@@ -8971,6 +8971,12 @@ int dsi_display_enable(struct dsi_display *display)
 		dsi_display_panel_id_notification(display);
 #ifdef OPLUS_BUG_STABILITY
 		set_oplus_display_power_status(OPLUS_DISPLAY_POWER_ON);
+		/*
+		 * The seed mode is otherwise only sent on a DPMS on transition,
+		 * which leaves the panel in the mode of the bootloader until the
+		 * display is powered on again.
+		 */
+		oplus_dsi_update_seed_mode(display);
 #endif
 		return 0;
 	}
