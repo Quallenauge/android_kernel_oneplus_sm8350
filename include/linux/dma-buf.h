@@ -25,6 +25,7 @@
 
 struct device;
 struct dma_buf;
+struct dma_buf_sysfs_entry;
 struct dma_buf_attachment;
 
 /**
@@ -426,11 +427,17 @@ struct dma_buf {
 /**
  * struct msm_dma_buf - Holds the meta data associated with a shared buffer
  * object, as well as the buffer object.
+ * @sysfs_entry: per-buffer entry in /sys/kernel/dmabuf/buffers. It is kept
+ *	in front of @refs so that the offsets of @refs and @i_ino relative to
+ *	@dma_buf, which to_msm_dma_buf() users rely on, do not change.
  * @refs: list entry for dma-buf reference tracking
  * @i_ino: inode number
  * @dma_buf: the shared buffer object
  */
 struct msm_dma_buf {
+#ifdef CONFIG_DMABUF_SYSFS_STATS
+	struct dma_buf_sysfs_entry *sysfs_entry;
+#endif
 	struct list_head refs;
 	unsigned long i_ino;
 	struct dma_buf dma_buf;
