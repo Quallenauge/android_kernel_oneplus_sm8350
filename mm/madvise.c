@@ -1218,58 +1218,43 @@ SYSCALL_DEFINE3(madvise, unsigned long, start, size_t, len_in, int, behavior)
 	return do_madvise(current, current->mm, start, len_in, behavior);
 }
 
-static int do_process_madvise(struct task_struct *target_task,
-		struct mm_struct *mm, struct iov_iter *iter, int behavior)
-{
-	struct iovec iovec;
-	int ret = 0;
-
-	while (iov_iter_count(iter)) {
-		iovec = iov_iter_iovec(iter);
-		ret = do_madvise(target_task, mm, (unsigned long)iovec.iov_base,
-					iovec.iov_len, behavior);
-		if (ret < 0)
-			break;
-		iov_iter_advance(iter, iovec.iov_len);
-	}
-
-	return ret;
-}
-
-SYSCALL_DEFINE6(process_madvise, int, which, pid_t, upid,
-		const struct iovec __user *, vec, unsigned long, vlen,
-		int, behavior, unsigned long, flags)
+SYSCALL_DEFINE5(process_madvise, int, pidfd, const struct iovec __user *, vec,
+		size_t, vlen, int, behavior, unsigned int, flags)
 {
 	ssize_t ret;
+	struct iovec iovstack[UIO_FASTIOV], iovec;
+	struct iovec *iov = iovstack;
+	struct iov_iter iter;
 	struct pid *pid;
 	struct task_struct *task;
 	struct mm_struct *mm;
-	struct iovec iovstack[UIO_FASTIOV];
-	struct iovec *iov = iovstack;
-	struct iov_iter iter;
+	size_t total_len;
 
-	if (flags != 0)
-		return -EINVAL;
+	if (flags != 0) {
+		ret = -EINVAL;
+		goto out;
+	}
 
-	switch (which) {
-	case P_PID:
-		if (upid <= 0)
-			return -EINVAL;
+	/*
+	 * On 5.4, import_iovec() does not handle compat iovecs by itself, so
+	 * the 32-bit entry, which also points here, needs compat_import_iovec().
+	 */
+#ifdef CONFIG_COMPAT
+	if (in_compat_syscall())
+		ret = compat_import_iovec(READ,
+				(const struct compat_iovec __user *)vec, vlen,
+				ARRAY_SIZE(iovstack), &iov, &iter);
+	else
+#endif
+		ret = import_iovec(READ, vec, vlen, ARRAY_SIZE(iovstack),
+				   &iov, &iter);
+	if (ret < 0)
+		goto out;
 
-		pid = find_get_pid(upid);
-		if (!pid)
-			return -ESRCH;
-		break;
-	case P_PIDFD:
-		if (upid < 0)
-			return -EINVAL;
-
-		pid = pidfd_get_pid(upid);
-		if (IS_ERR(pid))
-			return PTR_ERR(pid);
-		break;
-	default:
-		return -EINVAL;
+	pid = pidfd_get_pid(pidfd);
+	if (IS_ERR(pid)) {
+		ret = PTR_ERR(pid);
+		goto free_iov;
 	}
 
 	task = get_pid_task(pid, PIDTYPE_PID);
@@ -1289,19 +1274,27 @@ SYSCALL_DEFINE6(process_madvise, int, which, pid_t, upid,
 		goto release_task;
 	}
 
-	ret = import_iovec(READ, vec, vlen, ARRAY_SIZE(iovstack), &iov, &iter);
-	if (ret >= 0) {
-		size_t total_len = iov_iter_count(&iter);
+	total_len = iov_iter_count(&iter);
 
-		ret = do_process_madvise(task, mm, &iter, behavior);
-		if (ret >= 0)
-			ret = total_len - iov_iter_count(&iter);
-		kfree(iov);
+	while (iov_iter_count(&iter)) {
+		iovec = iov_iter_iovec(&iter);
+		ret = do_madvise(task, mm, (unsigned long)iovec.iov_base,
+					iovec.iov_len, behavior);
+		if (ret < 0)
+			break;
+		iov_iter_advance(&iter, iovec.iov_len);
 	}
+
+	if (ret == 0)
+		ret = total_len - iov_iter_count(&iter);
+
 	mmput(mm);
 release_task:
 	put_task_struct(task);
 put_pid:
 	put_pid(pid);
+free_iov:
+	kfree(iov);
+out:
 	return ret;
 }
