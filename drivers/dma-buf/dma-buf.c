@@ -29,6 +29,8 @@
 #include <uapi/linux/dma-buf.h>
 #include <uapi/linux/magic.h>
 
+#include "dma-buf-sysfs-stats.h"
+
 static inline int is_dma_buf_file(struct file *);
 
 struct dma_buf_list {
@@ -100,6 +102,8 @@ static void dma_buf_release(struct dentry *dentry)
 	 * dma-buf while still having pending operation to the buffer.
 	 */
 	BUG_ON(dmabuf->cb_shared.active || dmabuf->cb_excl.active);
+
+	dma_buf_stats_teardown(dmabuf);
 
 	dtor_ret = dma_buf_invoke_dtor(dmabuf);
 
@@ -617,6 +621,16 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 	mutex_lock(&db_list.lock);
 	list_add(&dmabuf->list_node, &db_list.head);
 	mutex_unlock(&db_list.lock);
+
+	/*
+	 * Unlike upstream, a failure here is not fatal: the buffer is fully
+	 * set up at this point and only lacks its statistics entry. Undoing
+	 * the export from here would race with the deferred file release.
+	 */
+	ret = dma_buf_stats_setup(dmabuf);
+	if (ret)
+		pr_warn_ratelimited("dma-buf: no sysfs stats for ino %lu: %d\n",
+				    msm_dma_buf->i_ino, ret);
 
 	return dmabuf;
 
@@ -1435,6 +1449,12 @@ static inline void dma_buf_uninit_debugfs(void)
 
 static int __init dma_buf_init(void)
 {
+	int ret;
+
+	ret = dma_buf_init_sysfs_statistics();
+	if (ret)
+		return ret;
+
 	dma_buf_mnt = kern_mount(&dma_buf_fs_type);
 	if (IS_ERR(dma_buf_mnt))
 		return PTR_ERR(dma_buf_mnt);
@@ -1450,5 +1470,6 @@ static void __exit dma_buf_deinit(void)
 {
 	dma_buf_uninit_debugfs();
 	kern_unmount(dma_buf_mnt);
+	dma_buf_uninit_sysfs_statistics();
 }
 __exitcall(dma_buf_deinit);
