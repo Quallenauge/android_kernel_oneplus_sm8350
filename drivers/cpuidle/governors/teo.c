@@ -105,6 +105,7 @@
 #include <linux/jiffies.h>
 #include <linux/kernel.h>
 #include <linux/sched/clock.h>
+#include <linux/sched/stat.h>
 #include <linux/tick.h>
 
 #include "gov.h"
@@ -352,6 +353,24 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	 * timers are scheduled which may be missed.
 	 */
 	cpu_data->sleep_length_ns = KTIME_MAX;
+
+	/*
+	 * WALT keeps a CPU out of deep idle states for a while after it has
+	 * been busy (sched_busy_hyst_ns, set by the power HAL during
+	 * interactions).  The qcom LPM governor honors that in
+	 * lpm_disallowed(), so do the same and use the shallowest enabled
+	 * state without stopping the tick.
+	 */
+	if (sched_lpm_disallowed_time(dev->cpu)) {
+		idx = 0; /* No states enabled, must use 0. */
+		for (i = 0; i < drv->state_count; i++) {
+			if (!dev->states_usage[i].disable) {
+				idx = i;
+				break;
+			}
+		}
+		goto out_tick;
+	}
 
 	if (!dev->states_usage[0].disable)
 		idx = 0;
