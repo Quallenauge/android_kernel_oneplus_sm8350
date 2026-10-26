@@ -22,6 +22,10 @@ extern unsigned long nr_iowait(void);
 extern unsigned long nr_iowait_cpu(int cpu);
 
 #ifdef CONFIG_SCHED_WALT
+struct file;
+struct inode;
+struct seq_file;
+
 extern void sched_update_nr_prod(int cpu, long delta, bool inc);
 extern unsigned int sched_get_cpu_util(int cpu);
 extern void sched_update_hyst_times(void);
