@@ -10559,10 +10559,11 @@ int oplus_enforce_chg_up_limit_result(struct oplus_chg_chip *chip, bool cut_off_
 	int rc = 0;
 	static int pre_is_force_charge_limit = 0;
 
-	chg_info("oplus_enforce_chg_up_limit_result begain %d %d %d %d\n", val, chip->pre_chg_up_limit_mmi_val,
-		chg_up_limit_data.is_force_set_charge_limit, pre_is_force_charge_limit);
 	if (val == chip->pre_chg_up_limit_mmi_val && chg_up_limit_data.is_force_set_charge_limit == pre_is_force_charge_limit)
 		return rc;
+
+	chg_info("oplus_enforce_chg_up_limit_result begain %d %d %d %d\n", val, chip->pre_chg_up_limit_mmi_val,
+		chg_up_limit_data.is_force_set_charge_limit, pre_is_force_charge_limit);
 
 	chip->pre_chg_up_limit_mmi_val = val;
 	pre_is_force_charge_limit = chg_up_limit_data.is_force_set_charge_limit;
@@ -10590,7 +10591,8 @@ void monitor_ui_soc_to_enable_chg_up_limit(struct oplus_chg_chip *chip)
 {
 	static int over_count = 0;
 
-	chg_info("monitor_ui_soc_to_enable_chg_up_limit: charge_limit_enable=%d, ui_soc=%d %d %d %d",
+	pr_debug("[OPLUS_CHG][%s]monitor_ui_soc_to_enable_chg_up_limit: charge_limit_enable=%d, ui_soc=%d %d %d %d\n",
+		__func__,
 		chg_up_limit_data.charge_limit_enable, chip->ui_soc, chg_up_limit_data.charge_limit_value,
 		chg_up_limit_data.charge_limit_recharge_value, over_count);
 
